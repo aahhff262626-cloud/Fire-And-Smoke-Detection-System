@@ -8,13 +8,15 @@ import cloudinary
 import cloudinary.uploader
 
 # تهيئة Cloudinary
-if hasattr(config, 'CLOUDINARY_CLOUD_NAME') and config.CLOUDINARY_CLOUD_NAME != "ضع_اسم_السحابة_هنا":
+try:
     cloudinary.config(
-        cloud_name=config.CLOUDINARY_CLOUD_NAME,
-        api_key=config.CLOUDINARY_API_KEY,
-        api_secret=config.CLOUDINARY_API_SECRET,
+        cloud_name=str(config.CLOUDINARY_CLOUD_NAME).strip(),
+        api_key=str(config.CLOUDINARY_API_KEY).strip(),
+        api_secret=str(config.CLOUDINARY_API_SECRET).strip(),
         secure=True
     )
+except Exception:
+    pass
 
 class ReporterAgent:
     def __init__(self):
@@ -48,28 +50,46 @@ class ReporterAgent:
             self.writer = None
 
     def upload_to_cloud(self, video_path):
-        """رفع الفيديو إلى Cloudinary واستخراج رابط المشاهدة السحابي المباشر."""
-        print(f"☁️ [Reporter] جاري رفع الفيديو سحابياً إلى Cloudinary...")
+        """رفع الفيديو سحابياً برابط دائم مدى الحياة."""
+        
+        # 1. المحاولة الأولى: عبر سحابة Cloudinary
+        print(f"☁️ [Reporter] جاري الرفع إلى سحابة Cloudinary...")
         try:
-            if hasattr(config, 'CLOUDINARY_CLOUD_NAME') and config.CLOUDINARY_CLOUD_NAME != "ضع_اسم_السحابة_هنا":
-                response = cloudinary.uploader.upload_large(
-                    video_path,
-                    resource_type="video",
-                    folder="flame_eye_alerts"
-                )
-                cloud_url = response.get("secure_url", "")
-                if cloud_url:
-                    print(f"✅ تم الرفع بنجاح! الرابط السحابي:\n{cloud_url}")
-                    return cloud_url
+            res = cloudinary.uploader.upload(
+                video_path,
+                resource_type="video",
+                folder="flame_eye_alerts"
+            )
+            cloud_url = res.get("secure_url", "")
+            if cloud_url:
+                print(f"✅ تم الرفع بنجاح إلى Cloudinary:\n{cloud_url}")
+                return cloud_url
         except Exception as e:
             print(f"⚠️ ملاحظة Cloudinary: {e}")
 
-        # خطة بديلة سحابية تلقائية
+        # 2. المحاولة الثانية: سحابة Catbox الدائمة مدى الحياة (Permanent Cloud Storage)
+        print(f"☁️ [Reporter] جاري الرفع إلى السحابة الدائمة (Permanent Cloud)...")
         try:
             with open(video_path, "rb") as f:
-                res = requests.post("https://tmpfiles.org/api/v1/upload", files={"file": f}, timeout=15)
-                if res.status_code == 200:
-                    raw = res.json().get("data", {}).get("url", "")
+                res = requests.post(
+                    "https://catbox.moe/user/api.php",
+                    data={"reqtype": "fileupload"},
+                    files={"fileToUpload": f},
+                    timeout=30
+                )
+                if res.status_code == 200 and res.text.startswith("http"):
+                    permanent_url = res.text.strip()
+                    print(f"✅ تم إنشاء رابط سحابي دائم مدى الحياة:\n{permanent_url}")
+                    return permanent_url
+        except Exception as e:
+            print(f"⚠️ ملاحظة السحابة البديلة: {e}")
+
+        # 3. المحاولة الثالثة الاحتياطية
+        try:
+            with open(video_path, "rb") as f:
+                r = requests.post("https://tmpfiles.org/api/v1/upload", files={"file": f}, timeout=15)
+                if r.status_code == 200:
+                    raw = r.json().get("data", {}).get("url", "")
                     if raw:
                         return raw.replace("https://tmpfiles.org/", "https://tmpfiles.org/dl/")
         except Exception:
@@ -87,4 +107,4 @@ class ReporterAgent:
                 f"رابط سحابي: {cloud_url or 'محلي'}\n"
             )
             f.write(log_entry)
-        print(f"📝 [Reporter] تم توثيق الحدث والرابط في سجل fires.log")
+        print(f"📝 [Reporter] تم توثيق الحدث في fires.log")

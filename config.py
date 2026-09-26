@@ -1,40 +1,32 @@
 # config.py
-# إعدادات النظام الموحدة ومفاتيح السحابة
-
 import os
 
-# اسم الموقع أو المنشأة
 LOCATION_TAG = "مصنع - قسم التشغيل الرئيسي (Factory - Main Section)"
 
-# بيانات التواصل المعتمدة
+# بيانات الإيميل المعتمدة
 TARGET_EMAIL = "aahhff262626@gmail.com"
 SENDER_EMAIL = "aahhff262626@gmail.com"
 SENDER_PASSWORD = "eudu rlps wyat zeok"
 
+# بيانات الواتساب
 TARGET_PHONE = "+201060034154"
 CALLMEBOT_API_KEY = "1388599"
 
-# ==============================================================================
-# إعدادات التخزين السحابي Cloudinary المعتمدة
-# ==============================================================================
+# إعدادات التخزين السحابي Cloudinary (محدثة بالرقم الصحيح)
 CLOUDINARY_CLOUD_NAME = "nievei2z"
-CLOUDINARY_API_KEY = "26688788799998135"
-CLOUDINARY_API_SECRET = "HlA4m5GKTtb6t4OZ3O9MBvm78t8"
+CLOUDINARY_API_KEY = "389124879819132"
+CLOUDINARY_API_SECRET = "bGODaPVOWswocPbn9fVtlLSz_F8"
 
-# متغير بيئة السحابة الكامل
-CLOUDINARY_URL = f"cloudinary://{CLOUDINARY_API_KEY}:{CLOUDINARY_API_SECRET}@{CLOUDINARY_CLOUD_NAME}"
-os.environ["CLOUDINARY_URL"] = CLOUDINARY_URL
+# ضبط متغير البيئة التلقائي
+os.environ["CLOUDINARY_URL"] = f"cloudinary://{CLOUDINARY_API_KEY}:{CLOUDINARY_API_SECRET}@{CLOUDINARY_CLOUD_NAME}"
 
-# ==============================================================================
-# إعدادات الكاميرا والتسجيل والملفات
-# ==============================================================================
+# إعدادات الكاميرا والتسجيل
 CAMERA_INDEX = 0
 RECORD_DURATION = 30
 ALERT_COOLDOWN = 60
 OUTPUT_DIR = "alert_records"
 LOG_FILE = "fires.log"
 
-# ملفات النماذج والأصوات
 FIRE_MODEL_PATH = "fire.pt"
 ALARM_SOUND_PATH = "alarm_new.mp3"
 

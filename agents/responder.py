@@ -21,7 +21,6 @@ class ResponderAgent:
             pygame.mixer.music.play()
 
     def send_whatsapp(self, hazard_label, people_summary, cloud_url=""):
-        """إرسال تنبيه الواتساب برابط الفيديو السحابي المباشر."""
         video_link = cloud_url if cloud_url else "https://mail.google.com/mail/u/0/#inbox"
         message = (
             f"إنذار طوارئ: تم رصد {hazard_label}\n"
@@ -34,13 +33,14 @@ class ResponderAgent:
             phone = config.TARGET_PHONE.replace("+", "").strip()
             msg_enc = urllib.parse.quote(message)
             url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={msg_enc}&apikey={config.CALLMEBOT_API_KEY}"
-            requests.get(url, timeout=10)
-            print("✅ [Responder] تم إرسال رسالة الواتساب بالرابط السحابي.")
+            res = requests.get(url, timeout=12)
+            print(f"📡 رد الواتساب: {res.text.strip()}")
         except Exception as e:
-            print(f"⚠️ [Responder] تعذر إرسال الواتساب: {e}")
+            print(f"⚠️ خطأ الواتساب: {e}")
 
     def send_email(self, video_path, hazard_label, people_summary, cloud_url=""):
-        """إرسال الإيميل مع الرابط السحابي ومرفق الفيديو."""
+        """إرسال الإيميل مع الرابط السحابي المباشر ومرفق الفيديو."""
+        print(f"📧 [Responder] جاري إرسال الإيميل إلى {config.TARGET_EMAIL}...")
         try:
             msg = MIMEMultipart()
             msg['From'] = config.SENDER_EMAIL
@@ -55,13 +55,14 @@ class ResponderAgent:
 - توقيت الحدث: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - الأشخاص في المكان: {people_summary}
 
-☁️ رابط مشاهدة الفيديو سحابياً عبر السحابة (Cloud Video Link):
-{cloud_url if cloud_url else 'جاري تجهيز الرابط، المرفق متاح بالأسفل'}
+☁️ رابط مشاهدة الفيديو سحابياً عبر Cloudinary:
+{cloud_url if cloud_url else 'الرابط قيد التجهيز، المرفق متاح بالأسفل'}
 --------------------------------------------------
 (فيديو الحدث مدته 30 ثانية مرفق مع هذه الرسالة)
             """
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
+            # إرفاق الفيديو كملف
             if os.path.exists(video_path):
                 with open(video_path, "rb") as f:
                     part = MIMEBase("application", "octet-stream")
@@ -70,10 +71,12 @@ class ResponderAgent:
                 part.add_header("Content-Disposition", f'attachment; filename="{os.path.basename(video_path)}"')
                 msg.attach(part)
 
-            with smtplib.SMTP("smtp.gmail.com", 587, timeout=25) as server:
+            # زيادة مهلة الاتصال إلى 60 ثانية لضمان الإرسال
+            with smtplib.SMTP("smtp.gmail.com", 587, timeout=60) as server:
                 server.starttls()
                 server.login(config.SENDER_EMAIL, config.SENDER_PASSWORD)
                 server.send_message(msg)
-                print("✅ [Responder] تم إرسال الإيميل بالرابط السحابي بنجاح.")
+                print("✅ [Responder] تم إرسال الإيميل ومرفق الفيديو بنجاح!")
+
         except Exception as e:
-            print(f"⚠️ [Responder] تعذر إرسال الإيميل: {e}")
+            print(f"⚠️ [Responder] تعذر إرسال الإيميل، السبب: {e}")
