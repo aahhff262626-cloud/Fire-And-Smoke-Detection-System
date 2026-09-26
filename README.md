@@ -1,44 +1,14 @@
-# 🚨 نظام كشف الحريق والدخان (Fire & Smoke Detection System)
-
-نظام ذكي يعتمد على الرؤية الحاسوبية (Computer Vision) والتعلم العميق لكشف أعمدة الدخان وألسنة النيران في الوقت الفعلي عبر الكاميرات، مع إرسال تنبيهات فورية وحفظ تسجيلات الفيديو للحالات الطارئة.
-
----
-
-## 🛠️ التقنيات المستخدمة (Technologies Used)
-* **Python 3.11+**
-* **OpenCV (`cv2`)**: لمعالجة الصور وبث الكاميرا المباشر.
-* **YOLO / PyTorch (`fire.pt`)**: لتدريب واكتشاف الحريق والدخان بدقة عالية.
-* **Requests / APIs**: لإرسال التنبيهات والرسائل الفورية.
-
----
-
-## 📦 متطلبات التشغيل (Prerequisites)
-
-تأكد من تثبيت مكتبات المشروع الأساسية عبر الأمر التالي:
-
-```bash
-pip install -r requirements.txt 
-لتشغيل النظام وبدء المراقبة المباشرة:python main11.py
-للخروج من البرنامج: اضغط على حرف q أثناء عرض شاشة الكاميرا.
-
-هيكل المشروع (Project Structure)
-main11.py: الملف الرئيسي لتشغيل النظام والبث المباشر.
-
-fire.pt: نموذج الذكاء الاصطناعي المدرب لكشف الحريق.
-
-alarm_new.mp3: صوت التنبيه الصوتي عند اكتشاف الخطر.
-
-alert_records/: مجلد يتم فيه حفظ مقاطع الفيديو المسجلة أثناء التنبيهات.
-
-requirements.txt: حزمة المكتبات المطلوبة للتشغي
-
----
-
-### 3. رفع ملف README إلى GitHub
-
-بعد حفظ الملف في VS Code، افتح الـ **Terminal** ونفّذ الأوامر التالية لرفعه مباشرة:
-
-```bash
-git add README.md
-git commit -m "Add professional README file"
-git push origin master
+Fire_Project/
+│
+├── config.py                 # الإعدادات الموحدة (الإيميل، الواتساب، المسارات)
+├── main.py                   # نقطة تشغيل النظام
+├── dashboard.py              # لوحة تحكم ذكية حية (Streamlit Dashboard)
+├── fires.log                 # سجل أمني دائم لكل الحرائق المكتشفة
+│
+└── agents/                   # مجلد الوكلاء الأذكياء
+    ├── __init__.py
+    ├── watcher.py            # [Agent 1: The Watcher] - مسؤول الكاميرا والربط
+    ├── analyst.py            # [Agent 2: The Analyst] - مسؤول كشف الحريق والوجوه ومنع الإنذار الكاذب
+    ├── responder.py          # [Agent 3: The Responder] - مسؤول الإنذار الصوتي والواتساب والإيميل
+    ├── reporter.py           # [Agent 4: The Reporter] - مسجل الفيديوهات ومسؤول الـ Logging
+    └── orchestrator.py       # [The Director] - مدير الرسم البياني وموجه المهام (StateGraph)
