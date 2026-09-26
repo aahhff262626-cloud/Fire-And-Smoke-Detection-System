@@ -16,45 +16,49 @@ class ResponderAgent:
         pygame.mixer.init()
 
     def play_siren(self):
-        """تشغيل سرينة الإنذار."""
         if os.path.exists(config.ALARM_SOUND_PATH) and not pygame.mixer.music.get_busy():
             pygame.mixer.music.load(config.ALARM_SOUND_PATH)
             pygame.mixer.music.play()
 
-    def send_whatsapp(self, hazard_label, people_summary):
-        """إرسال تنبيه الواتساب السريع."""
+    def send_whatsapp(self, hazard_label, people_summary, cloud_url=""):
+        """إرسال تنبيه الواتساب برابط الفيديو السحابي المباشر."""
+        video_link = cloud_url if cloud_url else "https://mail.google.com/mail/u/0/#inbox"
         message = (
             f"إنذار طوارئ: تم رصد {hazard_label}\n"
             f"الموقع: {config.LOCATION_TAG}\n"
             f"الأشخاص: {people_summary}\n\n"
-            f"تم إرسال الفيديو إلى بريدك:\nhttps://mail.google.com/mail/u/0/#inbox"
+            f"▶️ رابط مشاهدة فيديو الحدث سحابياً فوراً:\n"
+            f"{video_link}"
         )
         try:
             phone = config.TARGET_PHONE.replace("+", "").strip()
             msg_enc = urllib.parse.quote(message)
             url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={msg_enc}&apikey={config.CALLMEBOT_API_KEY}"
             requests.get(url, timeout=10)
-            print("✅ [Responder] تم إرسال رسالة الواتساب بنجاح.")
+            print("✅ [Responder] تم إرسال رسالة الواتساب بالرابط السحابي.")
         except Exception as e:
             print(f"⚠️ [Responder] تعذر إرسال الواتساب: {e}")
 
-    def send_email(self, video_path, hazard_label, people_summary):
-        """إرسال الإيميل مع تقرير بالحدث ومرفق الفيديو."""
+    def send_email(self, video_path, hazard_label, people_summary, cloud_url=""):
+        """إرسال الإيميل مع الرابط السحابي ومرفق الفيديو."""
         try:
             msg = MIMEMultipart()
             msg['From'] = config.SENDER_EMAIL
             msg['To'] = config.TARGET_EMAIL
-            msg['Subject'] = f"🚨 إنذار طارئ: رصد {hazard_label} في {config.LOCATION_TAG}"
+            msg['Subject'] = f"🚨 إنذار طارئ: تم رصد {hazard_label} في {config.LOCATION_TAG}"
 
             body = f"""
-تقرير أمني عاجل من نظام المراقبة:
-------------------------------------------
-- نوع الخطر: {hazard_label}
-- الموقع: {config.LOCATION_TAG}
-- التوقيت: {time.strftime('%Y-%m-%d %H:%M:%S')}
-- الأشخاص: {people_summary}
-------------------------------------------
-الفيديو مدته 30 ثانية مرفق مع هذه الرسالة.
+تحذير أمني عاجل من نظام Flame Eye:
+--------------------------------------------------
+- نوع الخطر المرصود: {hazard_label}
+- موقع الكاميرا: {config.LOCATION_TAG}
+- توقيت الحدث: {time.strftime('%Y-%m-%d %H:%M:%S')}
+- الأشخاص في المكان: {people_summary}
+
+☁️ رابط مشاهدة الفيديو سحابياً عبر السحابة (Cloud Video Link):
+{cloud_url if cloud_url else 'جاري تجهيز الرابط، المرفق متاح بالأسفل'}
+--------------------------------------------------
+(فيديو الحدث مدته 30 ثانية مرفق مع هذه الرسالة)
             """
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
@@ -70,6 +74,6 @@ class ResponderAgent:
                 server.starttls()
                 server.login(config.SENDER_EMAIL, config.SENDER_PASSWORD)
                 server.send_message(msg)
-                print("✅ [Responder] تم إرسال الإيميل ومرفق الفيديو بنجاح.")
+                print("✅ [Responder] تم إرسال الإيميل بالرابط السحابي بنجاح.")
         except Exception as e:
             print(f"⚠️ [Responder] تعذر إرسال الإيميل: {e}")
