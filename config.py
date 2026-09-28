@@ -1,38 +1,127 @@
 # config.py
-import os
+# ==============================================================================
+# ملف الإعدادات الموحدة لنظام Flame Eye
+# يحتوي على جميع المتغيرات والمسارات والبيانات الأساسية للنظام
+# ==============================================================================
 
+import os      # مكتبة التعامل مع نظام الملفات
+import socket  # مكتبة الحصول على عنوان الشبكة
+
+# ------------------------------------------------------------------
+# المسار الجذري للمشروع (يُحسب تلقائياً بغض النظر عن مكان التشغيل)
+# ------------------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def get_path(filename):
+    """إرجاع المسار الكامل لأي ملف داخل مجلد المشروع"""
+    return os.path.join(BASE_DIR, filename)
+
+# ------------------------------------------------------------------
+# استخراج عنوان IP المحلي للشبكة الداخلية (الواي فاي)
+# يُستخدم لفتح لوحة التحكم من أي جهاز على نفس الشبكة
+# ------------------------------------------------------------------
+def get_local_ip():
+    """الحصول على عنوان IP المحلي للكمبيوتر على الشبكة الداخلية"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))   # الاتصال بسيرفر Google لتحديد الواجهة النشطة
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "localhost"            # في حال الفشل يستخدم localhost
+
+# عنوان IP المحلي ورابط لوحة التحكم (ثابت ودائم طالما الجهاز يعمل)
+LOCAL_IP = get_local_ip()
+DASHBOARD_URL = f"http://{LOCAL_IP}:8501"
+
+def get_dashboard_url():
+    """
+    إرجاع رابط لوحة التحكم المناسب:
+    - إذا وُجد ملف tunnel_url.txt (عند تشغيل launch_dashboard.py) يستخدم الرابط العالمي
+    - وإلا يستخدم الرابط المحلي الثابت (يعمل على نفس الواي فاي دائماً)
+    """
+    tunnel_file = get_path("tunnel_url.txt")
+    if os.path.exists(tunnel_file):
+        try:
+            with open(tunnel_file, "r", encoding="utf-8") as f:
+                url = f.read().strip()
+                if url.startswith("http"):
+                    return url   # الرابط العالمي (يعمل من أي مكان في العالم)
+        except Exception:
+            pass
+    return DASHBOARD_URL  # الرابط المحلي (يعمل على نفس الواي فاي)
+
+# ------------------------------------------------------------------
+# بيانات الموقع (تُظهر في رسائل الإنذار)
+# ------------------------------------------------------------------
 LOCATION_TAG = "مصنع - قسم التشغيل الرئيسي (Factory - Main Section)"
 
-# بيانات الإيميل المعتمدة
-TARGET_EMAIL = "aahhff262626@gmail.com"
-SENDER_EMAIL = "aahhff262626@gmail.com"
-SENDER_PASSWORD = "eudu rlps wyat zeok"
+# ------------------------------------------------------------------
+# بيانات الإيميل (Gmail App Password)
+# ------------------------------------------------------------------
+TARGET_EMAIL    = "aahhff262626@gmail.com"   # إيميل المستلم (العميل)
+SENDER_EMAIL    = "aahhff262626@gmail.com"   # إيميل المرسل
+SENDER_PASSWORD = "eudu rlps wyat zeok"      # كلمة مرور التطبيق من Gmail
 
-# بيانات الواتساب
-TARGET_PHONE = "+201060034154"
-CALLMEBOT_API_KEY = "1388599"
+# ------------------------------------------------------------------
+# بيانات واتساب عبر CallMeBot
+# ------------------------------------------------------------------
+TARGET_PHONE      = "+201060034154"  # رقم هاتف العميل مع رمز الدولة
+CALLMEBOT_API_KEY = "1388599"        # مفتاح API الخاص بخدمة CallMeBot
 
-# إعدادات التخزين السحابي Cloudinary (محدثة بالرقم الصحيح)
+# ------------------------------------------------------------------
+# بيانات سحابة Cloudinary (احتياطية)
+# ------------------------------------------------------------------
 CLOUDINARY_CLOUD_NAME = "nievei2z"
-CLOUDINARY_API_KEY = "389124879819132"
-CLOUDINARY_API_SECRET = "bGODaPVOWswocPbn9fVtlLSz_F8"
+CLOUDINARY_API_KEY    = "2668878879998135"
+CLOUDINARY_API_SECRET = "HlA4m5GKTtb6t4OZ3O9MBvm78t8"
 
-# ضبط متغير البيئة التلقائي
-os.environ["CLOUDINARY_URL"] = f"cloudinary://{CLOUDINARY_API_KEY}:{CLOUDINARY_API_SECRET}@{CLOUDINARY_CLOUD_NAME}"
+# ------------------------------------------------------------------
+# إعدادات الكاميرا والتسجيل والتنبيهات
+# ------------------------------------------------------------------
+CAMERA_INDEX   = 0    # رقم الكاميرا (0 = الكاميرا الافتراضية)
+RECORD_DURATION = 30  # مدة تسجيل الفيديو بالثواني عند رصد خطر
+ALERT_COOLDOWN  = 60  # الحد الأدنى بين إنذارين متتاليين بالثواني (لمنع التكرار)
 
-# إعدادات الكاميرا والتسجيل
-CAMERA_INDEX = 0
-RECORD_DURATION = 30
-ALERT_COOLDOWN = 60
-OUTPUT_DIR = "alert_records"
-LOG_FILE = "fires.log"
+# ------------------------------------------------------------------
+# مجلدات الحفظ والسجلات
+# ------------------------------------------------------------------
+OUTPUT_DIR = get_path("alert_records")    # مجلد حفظ مقاطع الفيديو
+LOG_FILE   = get_path("fires.log")       # ملف سجل الحوادث الأمنية
+os.makedirs(OUTPUT_DIR, exist_ok=True)   # إنشاء المجلد إذا لم يكن موجوداً
 
-FIRE_MODEL_PATH = "fire.pt"
-ALARM_SOUND_PATH = "alarm_new.mp3"
+# ------------------------------------------------------------------
+# مسارات ملفات النماذج (AI Models)
+# ------------------------------------------------------------------
+FIRE_MODEL_PATH = get_path("fire.pt")        # نموذج YOLOv8 للكشف عن الحريق
+ALARM_SOUND_PATH = get_path("alarm_new.mp3") # ملف صوت صفارة الإنذار
 
-FACE_PROTO = "opencv_face_detector.pbtxt"
-FACE_MODEL = "opencv_face_detector_uint8.pb"
-AGE_PROTO = "age_deploy.prototxt"
-AGE_MODEL = "age_net.caffemodel"
-GENDER_PROTO = "gender_deploy.prototxt"
-GENDER_MODEL = "gender_net.caffemodel"
+# نموذج كشف الوجوه بالشبكة العصبية (Caffe DNN)
+FACE_PROTO = get_path("opencv_face_detector.pbtxt")
+FACE_MODEL = get_path("opencv_face_detector_uint8.pb")
+
+# نموذج التعرف على العمر
+AGE_PROTO  = get_path("age_deploy.prototxt")
+AGE_MODEL  = get_path("age_net.caffemodel")
+
+# نموذج التعرف على الجنس
+GENDER_PROTO  = get_path("gender_deploy.prototxt")
+GENDER_MODEL  = get_path("gender_net.caffemodel")
+
+# ------------------------------------------------------------------
+# إعدادات حساسية الكشف (مهمة للضبط الدقيق)
+# ------------------------------------------------------------------
+# حساسية كشف الحريق (0.0 - 1.0) - كلما قلت زادت الحساسية
+# ضُبطت على 0.38 لاكتشاف النار بسرعة
+FIRE_CONF_THRESHOLD  = 0.38
+
+# حساسية كشف الدخان والغازات - أعلى من النار لتجنب الإنذارات الكاذبة
+# (الدخان الخفيف قد يكون بخاراً أو غباراً وليس خطراً حقيقياً)
+SMOKE_CONF_THRESHOLD = 0.60
+
+# عدد إطارات التثبيت قبل إطلاق الإنذار (لمنع الإنذار الكاذب اللحظي)
+HAZARD_CONFIRM_FRAMES = 3
+
+# عدد الإطارات المستخدمة لتثبيت تحديد السن والجنس (يمنع القراءة المتأرجحة)
+AGE_SMOOTH_FRAMES = 7
